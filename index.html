@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>KU Events</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI';}
+
+body{
+  background:linear-gradient(135deg,#0f2027,#1c3b57,#2c5364);
+  color:white;
+}
+
+/* HEADER */
+header{
+  position:sticky;
+  top:0;
+  background:rgba(0,0,0,0.6);
+  backdrop-filter:blur(12px);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:15px;
+  padding:15px;
+}
+header img{width:100px;}
+header h2{
+  background:linear-gradient(90deg,#00d4ff,#6a11cb);
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+/* GRID */
+.container{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:25px;
+  padding:30px;
+}
+
+/* CARD */
+.card{
+  background:rgba(255,255,255,0.08);
+  border-radius:15px;
+  overflow:hidden;
+  transition:0.3s;
+}
+.card:hover{
+  transform:translateY(-10px) scale(1.03);
+  box-shadow:0 0 25px rgba(0,212,255,0.5);
+}
+.card img{
+  width:100%;
+  height:170px;
+  object-fit:cover;
+}
+.card-content{padding:15px;}
+
+.progress{
+  background:#333;
+  height:8px;
+  border-radius:5px;
+  margin:10px 0;
+}
+.progress div{
+  height:100%;
+  background:linear-gradient(90deg,#00d4ff,#0072ff);
+}
+
+/* BUTTON */
+button{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  background:linear-gradient(90deg,#00d4ff,#0072ff);
+  color:white;
+  cursor:pointer;
+}
+button:hover{transform:scale(1.05);}
+button:disabled{background:gray;}
+
+/* POPUP */
+#overlay{
+  position:fixed;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.7);
+  display:none;
+}
+
+#formBox{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:#1c2b36;
+  padding:25px;
+  border-radius:15px;
+  width:320px;
+  display:none;
+}
+
+input{
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  border:none;
+  border-radius:6px;
+}
+
+/* SUCCESS */
+#successPopup{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  background:linear-gradient(135deg,#00d4ff,#6a11cb);
+  padding:25px;
+  border-radius:15px;
+  transition:0.3s;
+}
+#successPopup.show{
+  transform:translate(-50%,-50%) scale(1);
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <img src="logo.png">
+  <h2>Karnavati University Events</h2>
+</header>
+
+<div class="container" id="events"></div>
+
+<div id="overlay"></div>
+
+<div id="formBox">
+  <form onsubmit="submitForm(event)">
+    <h3>Register</h3>
+    <input id="name" placeholder="Name" required>
+    <input id="email" type="email" placeholder="Email" required>
+    <input id="phone" type="tel" placeholder="Phone" required pattern="[0-9]{10}">
+    <input id="kuid" placeholder="KUID" required>
+    <button type="submit">Submit</button>
+  </form>
+</div>
+
+<div id="successPopup">
+  <h3>🎉 Success</h3>
+  <p id="successText"></p>
+</div>
+
+<script>
+const staticEvents = [
+ {id:1,img:"1.png",desc:"Coding"},
+ {id:2,img:"2.png",desc:"Music"},
+ {id:3,img:"3.png",desc:"AI"},
+ {id:4,img:"4.png",desc:"Hackathon"},
+ {id:5,img:"5.png",desc:"Startup"},
+ {id:6,img:"6.png",desc:"Robotics"},
+ {id:7,img:"7.png",desc:"Gaming"},
+ {id:8,img:"8.png",desc:"Photography"},
+ {id:9,img:"9.png",desc:"Debate"}
+];
+
+let currentEvent;
+
+async function loadEvents(){
+ let res=await fetch("http://localhost:3000/events");
+ let data=await res.json();
+
+ events.innerHTML="";
+
+ data.forEach(e=>{
+  let s=staticEvents.find(x=>x.id==e.id);
+  let percent=(e.registered/e.capacity)*100;
+
+  events.innerHTML+=`
+  <div class="card">
+    <img src="${s.img}">
+    <div class="card-content">
+      <h3>${e.name}</h3>
+      <p>${s.desc}</p>
+      <p>${e.registered}/${e.capacity}</p>
+      <div class="progress"><div style="width:${percent}%"></div></div>
+      <button ${e.registered>=e.capacity?"disabled":""} onclick="openForm(${e.id})">
+      ${e.registered>=e.capacity?"Full":"Register"}
+      </button>
+    </div>
+  </div>`;
+ });
+}
+
+function openForm(id){
+ currentEvent=id;
+ overlay.style.display="block";
+ formBox.style.display="block";
+}
+
+function closeForm(){
+ overlay.style.display="none";
+ formBox.style.display="none";
+}
+
+async function submitForm(e){
+ e.preventDefault();
+
+ let name=document.getElementById("name").value;
+ let email=document.getElementById("email").value;
+ let phone=document.getElementById("phone").value;
+ let kuid=document.getElementById("kuid").value;
+
+ let res=await fetch("http://localhost:3000/register",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({name,email,phone,kuid,event_id:currentEvent})
+ });
+
+ let text=await res.text();
+
+ closeForm();
+
+ if(text.includes("Successful")){
+  successText.innerText=text;
+  successPopup.classList.add("show");
+  setTimeout(()=>successPopup.classList.remove("show"),2000);
+ } else {
+  alert(text);
+ }
+
+ loadEvents();
+}
+
+loadEvents();
+</script>
+
+</body>
+</html>

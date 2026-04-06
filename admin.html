@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Panel</title>
+
+<style>
+body{
+  background:linear-gradient(135deg,#0f2027,#1c3b57,#2c5364);
+  color:white;
+  text-align:center;
+}
+
+h2{
+  margin:20px;
+  background:linear-gradient(90deg,#00d4ff,#6a11cb);
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+input{
+  padding:10px;
+  width:250px;
+  border-radius:8px;
+  border:none;
+}
+
+table{
+  width:80%;
+  margin:auto;
+  border-collapse:collapse;
+}
+
+th{
+  background:#00d4ff;
+}
+
+td,th{
+  padding:10px;
+}
+
+tr:hover{
+  background:rgba(255,255,255,0.1);
+}
+
+button{
+  background:red;
+  border:none;
+  padding:5px;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Admin Panel</h2>
+<input id="search" placeholder="Search" onkeyup="filter()">
+<table id="table"></table>
+
+<script>
+let allData=[];
+
+async function load(){
+ let res=await fetch("http://localhost:3000/registrations");
+ allData=await res.json();
+ display(allData);
+}
+
+function display(data){
+ table.innerHTML="<tr><th>Name</th><th>KUID</th><th>Event</th><th>Action</th></tr>";
+ data.forEach(r=>{
+  table.innerHTML+=`
+  <tr>
+   <td>${r.name}</td>
+   <td>${r.kuid}</td>
+   <td>${r.event_name}</td>
+   <td><button onclick="del(${r.id})">Delete</button></td>
+  </tr>`;
+ });
+}
+
+function del(id){
+ fetch("http://localhost:3000/delete/"+id,{method:"DELETE"})
+ .then(()=>load());
+}
+
+function filter(){
+ let key=search.value.toLowerCase();
+ display(allData.filter(r=>r.name.toLowerCase().includes(key)));
+}
+
+load();
+</script>
+
+</body>
+</html>

@@ -72,3 +72,4 @@ Open index.html in browser.
 
 ## 👨‍💻 Author
 Salman Shaikh
+Ziyad Gulati
